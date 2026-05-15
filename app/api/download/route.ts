@@ -13,12 +13,13 @@ export async function POST(req: Request) {
       );
     }
 
-    // YOUR yt-dlp path
+    // Linux/Railway command
     const command = `yt-dlp -j "${url}"`;
 
     const data = await new Promise<string>((resolve, reject) => {
-      exec(command, (error, stdout, stderr) => {
+      exec(command, { maxBuffer: 1024 * 1024 * 20 }, (error, stdout, stderr) => {
         if (error) {
+          console.error(stderr);
           reject(stderr || error.message);
           return;
         }
@@ -37,38 +38,35 @@ export async function POST(req: Request) {
       uploader: info.uploader,
       view_count: info.view_count,
       formats: info.formats
-  ?.filter(
-    (f: any) =>
-      f.url &&
-      (
-        // Video formats
-        (
-          f.ext === "mp4" &&
-          f.vcodec !== "none" &&
-          f.height
-        ) ||
-
-        // Audio formats
-        (
-          f.acodec !== "none" &&
-          f.vcodec === "none"
+        ?.filter(
+          (f: any) =>
+            f.url &&
+            (
+              (
+                f.ext === "mp4" &&
+                f.vcodec !== "none" &&
+                f.height
+              ) ||
+              (
+                f.acodec !== "none" &&
+                f.vcodec === "none"
+              )
+            )
         )
-      )
-  )
-  .map((f: any) => ({
-    format_id: f.format_id,
-    ext: f.ext,
-    url: f.url,
-    height: f.height,
-    filesize: f.filesize,
-    filesize_approx: f.filesize_approx,
-    vcodec: f.vcodec,
-    acodec: f.acodec,
-    abr: f.abr,
-  }))
-  .sort((a: any, b: any) => {
-    return (b.height || 0) - (a.height || 0);
-  }),
+        .map((f: any) => ({
+          format_id: f.format_id,
+          ext: f.ext,
+          url: f.url,
+          height: f.height,
+          filesize: f.filesize,
+          filesize_approx: f.filesize_approx,
+          vcodec: f.vcodec,
+          acodec: f.acodec,
+          abr: f.abr,
+        }))
+        .sort((a: any, b: any) => {
+          return (b.height || 0) - (a.height || 0);
+        }),
     });
 
   } catch (error) {
