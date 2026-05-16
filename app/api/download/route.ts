@@ -20,107 +20,22 @@ export async function POST(req: Request) {
 // YOUTUBE HANDLER (COBALT)
 // =========================
 
+
 if (
   url.includes("youtube.com") ||
   url.includes("youtu.be")
 ) {
-
-  const endpoints = [
-    "https://api.cobalt.tools/api/json",
-    "https://co.wuk.sh/api/json",
-  ];
-
-  let data: any = null;
-  let lastError = "";
-
-  for (const endpoint of endpoints) {
-
-    try {
-
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-
-        body: JSON.stringify({
-          url,
-          vQuality: "720",
-          filenamePattern: "classic",
-          isAudioOnly: false,
-        }),
-      });
-
-      data = await response.json();
-
-      console.log("COBALT RESPONSE:", data);
-
-      if (
-        data &&
-        data.status !== "error"
-      ) {
-        break;
-      }
-
-      lastError = data?.text || "Unknown error";
-
-    } catch (err: any) {
-
-      console.error("Endpoint failed:", endpoint);
-
-      lastError = String(err);
-    }
-  }
-
-  if (!data || data.status === "error") {
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: lastError || "YouTube fetch failed",
-      },
-      { status: 500 }
-    );
-  }
-
-  let finalUrl = data.url;
-
-  if (!finalUrl && data.picker?.length > 0) {
-    finalUrl = data.picker[0].url;
-  }
-
-  if (!finalUrl) {
-    return NextResponse.json(
-      {
-        success: false,
-        error: "No downloadable URL found",
-      },
-      { status: 500 }
-    );
-  }
-
-  return NextResponse.json({
-    success: true,
-    title: data.filename || "YouTube Video",
-    thumbnail: data.thumbnail,
-    duration: "",
-    uploader: "YouTube",
-
-    formats: [
-      {
-        format_id: "720",
-        ext: "mp4",
-        url: finalUrl,
-        height: 720,
-        filesize: null,
-        filesize_approx: null,
-        vcodec: "h264",
-        acodec: "aac",
-        abr: null,
-      },
-    ],
-  });
+  return NextResponse.json(
+    {
+      success: false,
+      error:
+        "YouTube downloads are temporarily unavailable. Please use Instagram or Facebook links.",
+    },
+    { status: 400 }
+  );
 }
+
+
     // =========================
     // INSTAGRAM/FACEBOOK
     // =========================
