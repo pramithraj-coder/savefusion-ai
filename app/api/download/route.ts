@@ -64,7 +64,7 @@ if (
 
     const info = JSON.parse(output);
 
-    return NextResponse.json({
+      return NextResponse.json({
       success: true,
       title: info.title,
       thumbnail: info.thumbnail,
@@ -72,48 +72,39 @@ if (
       uploader: info.uploader,
       view_count: info.view_count,
 
-      formats: Array.from(
-  new Map(
+      formats: info.formats
+        ?.filter(
+          (f: any) =>
+            f.url &&
+            (
+              (
+                f.ext === "mp4" &&
+                f.vcodec !== "none"
+              ) ||
 
-    info.formats
-      ?.filter(
-        (f: any) =>
-          f.url &&
-          f.ext === "mp4" &&
-          f.vcodec !== "none" &&
-          f.acodec !== "none" &&
-          f.height
-      )
+              (
+                f.acodec !== "none" &&
+                f.vcodec === "none"
+              )
+            )
+        )
 
-      .map((f: any) => ({
-        format_id: f.format_id,
-        ext: f.ext,
-        url: f.url,
-        height: f.height,
-        filesize: f.filesize,
-        filesize_approx: f.filesize_approx,
-        qualityLabel:
-          f.height >= 2160
-            ? "4K (Ultra HD)"
-            : f.height >= 1440
-            ? "2K"
-            : f.height >= 1080
-            ? "1080p (Full HD)"
-            : f.height >= 720
-            ? "720p (HD)"
-            : f.height >= 480
-            ? "480p (SD)"
-            : f.height >= 360
-            ? "360p (SD)"
-            : "240p (SD)",
-      }))
+        .map((f: any) => ({
+          format_id: f.format_id,
+          ext: f.ext,
+          url: f.url,
+          height: f.height,
+          filesize: f.filesize,
+          filesize_approx: f.filesize_approx,
+          vcodec: f.vcodec,
+          acodec: f.acodec,
+          abr: f.abr,
+        }))
 
-      .sort((a: any, b: any) => b.height - a.height)
-
-      .map((item: any) => [item.height, item])
-
-  ).values()
-),
+        .sort((a: any, b: any) => {
+          return (b.height || 0) - (a.height || 0);
+        }),
+    });
 
   } catch (error: any) {
 
