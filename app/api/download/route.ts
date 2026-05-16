@@ -8,24 +8,40 @@ export async function POST(req: Request) {
 
     if (!url) {
       return NextResponse.json(
-        { error: "Video URL is required" },
+        {
+          success: false,
+          error: "Video URL is required",
+        },
         { status: 400 }
       );
     }
 
-    // Linux/Railway command
-    const command = `yt-dlp -j "${url}"`;
+    // Remove playlist parameters from YouTube URLs
+    const cleanUrl = url.split("&list=")[0];
+
+    // Proxy
+    const proxy = `http://${process.env.PROXY_USERNAME}:${process.env.PROXY_PASSWORD}@${process.env.PROXY_HOST}:${process.env.PROXY_PORT}`;
+
+    // yt-dlp command
+    const command = `yt-dlp --proxy "${proxy}" --extractor-args "youtube:player_client=android" --no-playlist -j "${cleanUrl}"`;
 
     const data = await new Promise<string>((resolve, reject) => {
-      exec(command, { maxBuffer: 1024 * 1024 * 20 }, (error, stdout, stderr) => {
-        if (error) {
-          console.error(stderr);
-          reject(stderr || error.message);
-          return;
-        }
+      exec(
+        command,
+        {
+          maxBuffer: 1024 * 1024 * 20,
+        },
+        (error, stdout, stderr) => {
+          if (error) {
+            console.error("yt-dlp stderr:", stderr);
 
-        resolve(stdout);
-      });
+            reject(stderr || error.message);
+            return;
+          }
+
+          resolve(stdout);
+        }
+      );
     });
 
     const info = JSON.parse(data);
@@ -37,6 +53,7 @@ export async function POST(req: Request) {
       duration: info.duration,
       uploader: info.uploader,
       view_count: info.view_count,
+
       formats: info.formats
         ?.filter(
           (f: any) =>
@@ -69,13 +86,13 @@ export async function POST(req: Request) {
         }),
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("Download API Error:", error);
 
     return NextResponse.json(
       {
         success: false,
-        error: "Failed to fetch video details",
+        error: String(error),
       },
       { status: 500 }
     );
