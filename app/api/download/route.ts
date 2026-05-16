@@ -26,7 +26,7 @@ export async function POST(req: Request) {
 ) {
 
   const response = await fetch(
-    "https://co.wuk.sh/api/json",
+     "https://api.cobalt.tools/api/json",
     {
       method: "POST",
       headers: {
