@@ -356,7 +356,7 @@ const handleDownload = async () => {
 
                 <span className="font-semibold text-white">
                   {format.height
-                    ? `${format.height}p`
+                    ? `${format.qualityLabel}p`
                     : "HD Video"}
                 </span>
 
