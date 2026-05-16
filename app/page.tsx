@@ -355,10 +355,24 @@ const handleDownload = async () => {
               <div className="flex flex-col text-left">
 
                 <span className="font-semibold text-white">
-                  {format.height
-                    ? `${format.qualityLabel}p`
-                    : "HD Video"}
-                </span>
+  {format.height
+    ? `${format.height}p ${
+        format.height >= 2160
+          ? "(4K Ultra HD)"
+          : format.height >= 1440
+          ? "(2K Quad HD)"
+          : format.height >= 1080
+          ? "(Full HD)"
+          : format.height >= 720
+          ? "(HD)"
+          : format.height >= 480
+          ? "(SD)"
+          : format.height >= 360
+          ? "(Low)"
+          : "(Very Low)"
+      }`
+    : "HD Video"}
+</span>
 
                 <span className="text-sm text-gray-400">
                   {sizeMB} MB
