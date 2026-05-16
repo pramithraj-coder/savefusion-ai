@@ -21,62 +21,80 @@ export async function POST(req: Request) {
     // =========================
 
     if (
-      url.includes("youtube.com") ||
-      url.includes("youtu.be")
-    ) {
+  url.includes("youtube.com") ||
+  url.includes("youtu.be")
+) {
 
-      const response = await fetch(
-        "https://co.wuk.sh/api/json",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+  const response = await fetch(
+    "https://co.wuk.sh/api/json",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
 
-          body: JSON.stringify({
-            url,
-            vQuality: "1080",
-            filenamePattern: "classic",
-            isAudioOnly: false,
-          }),
-        }
-      );
-
-      const data = await response.json();
-
-      console.log("COBALT:", data);
-
-      if (data.status === "error") {
-        return NextResponse.json(
-          {
-            success: false,
-            error: data.text || "YouTube fetch failed",
-          },
-          { status: 500 }
-        );
-      }
-
-      return NextResponse.json({
-        success: true,
-        title: data.filename || "YouTube Video",
-        thumbnail: data.thumbnail,
-        duration: "",
-        uploader: "YouTube",
-        formats: [
-          {
-            format_id: "1080",
-            ext: "mp4",
-            url: data.url,
-            height: 1080,
-            filesize: null,
-            filesize_approx: null,
-            vcodec: "h264",
-            acodec: "aac",
-            abr: null,
-          },
-        ],
-      });
+      body: JSON.stringify({
+        url,
+        vQuality: "1080",
+        filenamePattern: "classic",
+        isAudioOnly: false,
+      }),
     }
+  );
+
+  const data = await response.json();
+
+  console.log("COBALT RESPONSE:", data);
+
+  if (data.status === "error") {
+    return NextResponse.json(
+      {
+        success: false,
+        error: data.text || "YouTube fetch failed",
+      },
+      { status: 500 }
+    );
+  }
+
+  // IMPORTANT FIX
+  let finalUrl = data.url;
+
+  if (!finalUrl && data.picker?.length > 0) {
+    finalUrl = data.picker[0].url;
+  }
+
+  if (!finalUrl) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: "No downloadable URL found",
+      },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({
+    success: true,
+    title: data.filename || "YouTube Video",
+    thumbnail: data.thumbnail,
+    duration: "",
+    uploader: "YouTube",
+
+    formats: [
+      {
+        format_id: "1080",
+        ext: "mp4",
+        url: finalUrl,
+        height: 1080,
+        filesize: null,
+        filesize_approx: null,
+        vcodec: "h264",
+        acodec: "aac",
+        abr: null,
+      },
+    ],
+  });
+}
 
     // =========================
     // INSTAGRAM/FACEBOOK
