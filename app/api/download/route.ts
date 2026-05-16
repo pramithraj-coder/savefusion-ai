@@ -72,24 +72,24 @@ if (
       uploader: info.uploader,
       view_count: info.view_count,
 
-      formats: info.formats
-        ?.filter(
-          (f: any) =>
-            f.url &&
-            (
-              (
-                f.ext === "mp4" &&
-                f.vcodec !== "none"
-              ) ||
+     formats: Array.from(
+  new Map(
+    info.formats
+      ?.filter(
+        (f: any) =>
+          f.url &&
+          f.ext === "mp4" &&
+          f.vcodec !== "none" &&
+          f.height
+      )
 
-              (
-                f.acodec !== "none" &&
-                f.vcodec === "none"
-              )
-            )
-        )
+      .sort((a: any, b: any) => {
+        return (b.height || 0) - (a.height || 0);
+      })
 
-        .map((f: any) => ({
+      .map((f: any) => [
+        f.height,
+        {
           format_id: f.format_id,
           ext: f.ext,
           url: f.url,
@@ -99,11 +99,10 @@ if (
           vcodec: f.vcodec,
           acodec: f.acodec,
           abr: f.abr,
-        }))
-
-        .sort((a: any, b: any) => {
-          return (b.height || 0) - (a.height || 0);
-        }),
+        },
+      ])
+  ).values()
+),
     });
 
   } catch (error: any) {
