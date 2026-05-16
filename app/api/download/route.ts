@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { exec } from "child_process";
 
 export async function POST(req: Request) {
   try {
@@ -10,86 +9,61 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           success: false,
-          error: "Video URL is required",
+          error: "URL required",
         },
         { status: 400 }
       );
     }
 
-    // Clean playlist params
-    const cleanUrl = url.split("&list=")[0];
+    const response = await fetch("https://co.wuk.sh/api/json", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
 
-    // Proxy
-    const proxy = `http://${process.env.PROXY_USERNAME}:${process.env.PROXY_PASSWORD}@${process.env.PROXY_HOST}:${process.env.PROXY_PORT}`;
-
-    // SINGLE LINE COMMAND
-    const command = `yt-dlp --proxy "${proxy}" --user-agent "com.google.android.youtube/19.09.37 (Linux; Android 11)" --extractor-args "youtube:player_client=android" --geo-bypass --no-playlist -j "${cleanUrl}"`;
-
-    console.log("Running command...");
-
-    const data = await new Promise<string>((resolve, reject) => {
-      exec(
-        command,
-        {
-          maxBuffer: 1024 * 1024 * 20,
-        },
-        (error, stdout, stderr) => {
-          if (error) {
-            console.error(stderr);
-
-            reject(stderr || error.message);
-            return;
-          }
-
-          resolve(stdout);
-        }
-      );
+      body: JSON.stringify({
+        url,
+        vQuality: "1080",
+        filenamePattern: "classic",
+        isAudioOnly: false,
+      }),
     });
 
-    const info = JSON.parse(data);
+    const data = await response.json();
+
+    console.log(data);
+
+    if (data.status === "error") {
+      return NextResponse.json(
+        {
+          success: false,
+          error: data.text,
+        },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       success: true,
-      title: info.title,
-      thumbnail: info.thumbnail,
-      duration: info.duration,
-      uploader: info.uploader,
-      view_count: info.view_count,
-
-      formats: info.formats
-        ?.filter(
-          (f: any) =>
-            f.url &&
-            (
-              (
-                f.ext === "mp4" &&
-                f.vcodec !== "none" &&
-                f.height
-              ) ||
-              (
-                f.acodec !== "none" &&
-                f.vcodec === "none"
-              )
-            )
-        )
-        .map((f: any) => ({
-          format_id: f.format_id,
-          ext: f.ext,
-          url: f.url,
-          height: f.height,
-          filesize: f.filesize,
-          filesize_approx: f.filesize_approx,
-          vcodec: f.vcodec,
-          acodec: f.acodec,
-          abr: f.abr,
-        }))
-        .sort((a: any, b: any) => {
-          return (b.height || 0) - (a.height || 0);
-        }),
+      title: data.filename,
+      thumbnail: data.thumbnail,
+      uploader: "YouTube",
+      duration: "",
+      formats: [
+        {
+          ext: "mp4",
+          url: data.url,
+          height: 1080,
+          filesize: null,
+          filesize_approx: null,
+          vcodec: "h264",
+          acodec: "aac",
+        },
+      ],
     });
 
   } catch (error: any) {
-    console.error("Download API Error:", error);
+    console.error(error);
 
     return NextResponse.json(
       {
