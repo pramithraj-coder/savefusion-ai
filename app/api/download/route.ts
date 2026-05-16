@@ -8,22 +8,27 @@ export async function POST(req: Request) {
 
     if (!url) {
       return NextResponse.json(
-        {
-          success: false,
-          error: "Video URL is required",
-        },
+        { success: false, error: "Video URL is required" },
         { status: 400 }
       );
     }
 
-    // Remove playlist parameters from YouTube URLs
+    // Remove playlist params from YouTube URLs
     const cleanUrl = url.split("&list=")[0];
 
-    // Proxy
     const proxy = `http://${process.env.PROXY_USERNAME}:${process.env.PROXY_PASSWORD}@${process.env.PROXY_HOST}:${process.env.PROXY_PORT}`;
 
-    // yt-dlp command
-    const command = `yt-dlp --proxy "${proxy}" --extractor-args "youtube:player_client=android" --no-playlist -j "${cleanUrl}"`;
+    const command =
+      `yt-dlp ` +
+      `--proxy "${proxy}" ` +
+      `--user-agent "com.google.android.youtube/19.09.37 (Linux; Android 11)" ` +
+      `--extractor-args "youtube:player_client=android" ` +
+      `--no-playlist ` +
+      `--geo-bypass ` +
+      `--dump-single-json ` +
+      `"${cleanUrl}"`;
+
+    console.log("Running:", command);
 
     const data = await new Promise<string>((resolve, reject) => {
       exec(
@@ -33,7 +38,7 @@ export async function POST(req: Request) {
         },
         (error, stdout, stderr) => {
           if (error) {
-            console.error("yt-dlp stderr:", stderr);
+            console.error("YT-DLP ERROR:", stderr);
 
             reject(stderr || error.message);
             return;
