@@ -17,46 +17,72 @@ export async function POST(req: Request) {
     }
 
     // =========================
-    // YOUTUBE HANDLER (COBALT)
-    // =========================
+// YOUTUBE HANDLER (COBALT)
+// =========================
 
-    if (
+if (
   url.includes("youtube.com") ||
   url.includes("youtu.be")
 ) {
 
-  const response = await fetch(
-     "https://api.cobalt.tools/api/json",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+  const endpoints = [
+    "https://api.cobalt.tools/api/json",
+    "https://co.wuk.sh/api/json",
+  ];
 
-      body: JSON.stringify({
-        url,
-        vQuality: "1080",
-        filenamePattern: "classic",
-        isAudioOnly: false,
-      }),
+  let data: any = null;
+  let lastError = "";
+
+  for (const endpoint of endpoints) {
+
+    try {
+
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+
+        body: JSON.stringify({
+          url,
+          vQuality: "720",
+          filenamePattern: "classic",
+          isAudioOnly: false,
+        }),
+      });
+
+      data = await response.json();
+
+      console.log("COBALT RESPONSE:", data);
+
+      if (
+        data &&
+        data.status !== "error"
+      ) {
+        break;
+      }
+
+      lastError = data?.text || "Unknown error";
+
+    } catch (err: any) {
+
+      console.error("Endpoint failed:", endpoint);
+
+      lastError = String(err);
     }
-  );
+  }
 
-  const data = await response.json();
+  if (!data || data.status === "error") {
 
-  console.log("COBALT RESPONSE:", data);
-
-  if (data.status === "error") {
     return NextResponse.json(
       {
         success: false,
-        error: data.text || "YouTube fetch failed",
+        error: lastError || "YouTube fetch failed",
       },
       { status: 500 }
     );
   }
 
-  // IMPORTANT FIX
   let finalUrl = data.url;
 
   if (!finalUrl && data.picker?.length > 0) {
@@ -82,10 +108,10 @@ export async function POST(req: Request) {
 
     formats: [
       {
-        format_id: "1080",
+        format_id: "720",
         ext: "mp4",
         url: finalUrl,
-        height: 1080,
+        height: 720,
         filesize: null,
         filesize_approx: null,
         vcodec: "h264",
@@ -95,7 +121,6 @@ export async function POST(req: Request) {
     ],
   });
 }
-
     // =========================
     // INSTAGRAM/FACEBOOK
     // =========================
